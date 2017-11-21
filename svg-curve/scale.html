@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <style>
+    body {
+      background-color: #F1F3F3    
+    }
+    .axis {
+      font: 10px sans-serif;
+    }
+
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #D4D8DA;
+      stroke-width: 1px;
+      shape-rendering: crispEdges;
+    }
+
+    .line {
+      fill: none;
+      stroke: #6F257F;
+      stroke-width: 1px;
+    }
+
+    .overlay {
+      fill: none;
+      pointer-events: all;
+    }
+
+    .focus circle {
+      fill: #fff;
+      stroke: #6F257F;
+      stroke-width: 1px;
+    }
+      
+    .hover-line {
+      stroke: #c2a2c2;
+      stroke-width: 1px;
+      stroke-dasharray: 3,3;
+    }
+    .area {
+      fill: steelblue;
+      clip-path: url(#clip);
+    }
+  </style>
+  <svg width="960" height="200"></svg>
+  <script src="../lib/d3.v4.js"></script>
+  <script>
+    var data = [
+      {"time" : "2015-01-01", "value": -2},
+      {"time" : "2015-01-02", "value": -3},
+      {"time" : "2015-01-03", "value": -2},
+      {"time" : "2015-01-04", "value": 4},
+      {"time" : "2015-01-05", "value": 8},
+      {"time" : "2015-01-06", "value": 6},
+      {"time" : "2015-01-07", "value": 3},
+      {"time" : "2015-01-08", "value": 0},
+      {"time" : "2015-01-09", "value": 2},
+      {"time" : "2015-01-10", "value": 4},
+      {"time" : "2015-01-11", "value": -2}
+    ];
+
+    var svg = d3.select("svg"),
+        margin = {top: 20, right: 50, bottom: 30, left: 40},
+        width = +svg.attr("width") - margin.left - margin.right,
+        height = +svg.attr("height") - margin.top - margin.bottom;
+
+    // 坐标轴汉化
+    let locale = d3.timeFormatLocale({
+        dateTime: "%a %b %e %X %Y",
+        date: "%Y/%-m/%-d",
+        time: "%H:%M:%S",
+        periods: ["上午", "下午"],
+        days: ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"],
+        shortDays: ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"],
+        months: ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"],
+        shortMonths: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+      });
+        
+    var parseTime = d3.timeParse("%Y-%m-%d"),
+        bisectDate = d3.bisector(function(d) { return d.time; }).left;
+
+    var g = svg.append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        
+    var x = d3.scaleTime().range([0, width]);
+    var y = d3.scaleLinear().range([height, 0]);
+
+    
+    var area = d3.area()
+        .curve(d3.curveMonotoneX)
+        .x(function(d) { return x(d.time); })
+        .y0(height)
+        .y1(function(d) { return y(d.value); });
+    
+
+    // var line = d3.line()
+    //     .curve(d3.curveCardinal)
+    //     .x(function(d) { return x(d.time); })
+    //     .y(function(d) { return y(d.value); });
+        
+
+    // 处理时间
+    data.forEach(function(d) {
+      d.time = parseTime(d.time);
+      d.value = +d.value;
+    });
+
+    // 坐标映射
+    x.domain(d3.extent(data, function(d) { return d.time; }));
+    // 上下兼容5摄氏度
+    y.domain([ d3.min(data, function(d) { return d.value; }) - 5 , d3.max(data, function(d) { return d.value; }) + 5]);
+
+    // x轴
+    g.append("g")
+        .attr("class", "axis axis--x")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x).tickFormat(locale.format("%b月%e日")));
+
+    // y轴
+    g.append("g")
+        .attr("class", "axis axis--y")
+        .call(d3.axisLeft(y).ticks(6).tickFormat(function(d) { return d + '℃'; }))
+      .append("text")
+        .attr("class", "axis-title")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .attr("fill", "#5D6971")
+        .text("温度（摄氏度）");
+    
+    // 曲线
+    // g.append("path")
+    //     .datum(data)
+    //     .attr("class", "line")
+    //     .attr("d", line);
+
+    // 设置渐变
+    var defs = g.append("defs");
+
+    var colora = d3.rgb(139,200,255,0.8);
+    var colorb = d3.rgb(139,200,255,0);
+
+    var linearGradient = defs.append("linearGradient")
+        .attr("id","clip")
+        .attr("x1","0%")
+        .attr("y1","0%")
+        .attr("x2","0%")
+        .attr("y2","100%");
+    
+    var stop1 = linearGradient.append("stop")
+            .attr("offset","0%")
+            .style("stop-color",colora.toString());
+    
+    var stop2 = linearGradient.append("stop")
+            .attr("offset","100%")
+            .style("stop-color",colorb.toString());
+    
+    // defs.append("rect")
+    //   .attr("width", width)
+    //   .attr("height", height)
+    //   .style("fill","url(#" + linearGradient.attr("id") + ")");
+
+    g.append("path")
+        .datum(data)
+        .attr("class", "area")
+        .attr("d", area)
+        .style("fill","url(#" + linearGradient.attr("id") + ")");
+        
+
+    // hover
+    var focus = g.append('g')
+        .attr('class', 'focus')
+        .style('display', 'none');
+
+    focus.append("line")
+        .attr("class", "x-hover-line hover-line")
+        .attr("y1", 0)
+        .attr("y2", height);
+
+    focus.append("circle")
+        .attr("r", 2);
+
+    focus.append("text")
+        .attr("x", 15)
+        .attr("dy", "-.3em");
+
+    svg.append("rect")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+      .attr("class", "overlay")
+      .attr("width", width)
+      .attr("height", height)
+      .on("mouseover", function() { focus.style("display", null); })
+      .on("mouseout", function() { focus.style("display", "block"); })
+      .on("mousemove", mousemove);
+
+    function mousemove() {
+      var x0 = x.invert(d3.mouse(this)[0]),
+          i = bisectDate(data, x0, 1),
+          d0 = data[i - 1],
+          d1 = data[i],
+          d = x0 - d0.time > d1.time - x0 ? d1 : d0;
+      // focus.attr("transform", "translate(" + x(d.time) + "," + y(d.value) + ")");
+      focus.attr("transform", "translate(" + x(d.time) + "," + 0 + ")");
+      focus.select("text").text(function() { return d.value + '℃'; });
+      focus.select("circle").attr("transform", "translate(" + 0 + "," + y(d.value) + ")");
+      focus.select("text").attr("transform", "translate(" + 0 + "," + y(d.value) + ")");
+      // focus.select(".x-hover-line").attr("y2", height - y(d.value));
+      focus.select(".y-hover-line").attr("x2", width + width);
+    }
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>svg curve</title>
+</head>
+<body>
+  <style>
+    .weather-curve{
+      position: relative;
+      margin-top: 50px;
+    }
+    .g-text span{
+      position: absolute;
+      transform: translate(-50%, -125%);
+    }
+  </style>
+  <div class="weather-curve"></div>
+
+  <script src="../lib/183.js"></script>
+  <script src="../lib/d3.v4.js"></script>
+  <script src="./svg-curve.js"></script>
+  <script>
+    $.SvgCurve({
+      width: 865,
+      selector: '.weather-curve',
+      height: 90,
+      offsetTop: 30,
+      offsetBtm: 20,
+      durationTime: 800,
+      strokeColor: '#999',
+      dotsColor: '#999',
+      points: ['12', '10', '14', '9'],
+      values: ['12℃', '10℃', '14℃', '9℃']
+    });
+  </script>
+</body>
+</html>
