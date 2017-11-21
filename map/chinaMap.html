@@ -2,11 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Document</title>
+  <title>China Map</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
+
   <div class="china-map"></div>
+
   <script src="../lib/183.js"></script>
   <script src="../lib/d3.v4.js"></script>
   <script src="./china.city.geo.json.js"></script>
@@ -19,9 +21,6 @@
       showProvience: true,
       showCity: false,
       geoJSON: geoJSON,
-      change: function(data) {
-        // console.dir(data);
-      },
       mapHover: function(data){
         data = "<div>Hi，this's Ivan's test。<strong>" + data + "</strong></div><div class='map-tips-btm'></div>";
         return data;

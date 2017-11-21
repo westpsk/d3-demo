@@ -4,10 +4,6 @@
 .southsea .bound{
     stroke: #4f8c93;
 }
-.southsea path{
-    fill: #DCE4E7;
-    stroke-width: 3px;
-}
 .southsea .part1{
     fill: #fff;
 }
@@ -16,6 +12,11 @@
 }
 .place-label{
     fill: #666;
+}
+.place-label{
+    text-anchor: middle;  
+    font-size: 12px;
+    cursor: pointer;
 }
 .map-tip {
     display: none;

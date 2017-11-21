@@ -55,104 +55,69 @@
     var mapHover = options.mapHover;
     var selector = options.selector;
     var selectorEle = $(selector);
+
     var projection = d3.geoAlbers()
-    .scale(mapWidth*1.1)
-    .translate([mapWidth / 2, mapHeight / 2])
-    .rotate([-105, 0])
-    .center([0, 36])
-    .parallels([27, 45]);
+        .rotate([-105, 0])
+        .center([0, 36])
+        .scale(mapWidth*1.1)
+        .translate([mapWidth / 2, mapHeight / 2]);
+
     var path = d3.geoPath(projection);
     var svg = d3.select(selector)
-    .append("svg")
-    .attr('width',mapWidth)
-    .attr('height', mapHeight);
-
-    /* 移动到svg外面 */
-    $(document).bind("mouseover", function(e){
-      if(selectorEle.has(e.target).length === 0){
-        resetColor(options.prePath);
-        tipHide();
-      }
-    });
+              .append("svg")
+              .attr('width',mapWidth)
+              .attr('height', mapHeight);
 
     svg.append("rect")
-    .attr("width", "100%")
-    .attr("height", "100%")
-    .attr("fill", borderColor)
-    .on('mouseover', function(){
-      resetColor(options.prePath);
-      tipHide();
-    });
+      .attr("width", mapWidth)
+      .attr("height", mapWidth)
+      .attr("fill", borderColor)
+      .on('mouseover', function(){
+        resetColor(options.prePath);
+        tipHide();
+      });
 
-    var gProvPath = svg.append("g")
-    .attr("class", "g-path");
-
-    var gNameText = svg.append("g")
-    .attr("class", "g-text");
-
+    var gPath = svg.append("g").attr("class", "g-path");
+    var gText = svg.append("g").attr("class", "g-text");
     var southsea = svg.append("g")
-    .attr("class", "southsea")
-    .attr("transform", "translate(" + (mapWidth - 64) + ", " + (mapHeight - 87) + "), scale(0.165)")
-    .style("display", "block");
+                  .attr("class", "southsea")
+                  .attr("transform", "translate(" + (mapWidth - 63) + ", " + (mapHeight - 86) + "), scale(0.165)")
+                  .style("display", "block");
     
     var tipTimer = null;
 
     $(selector).on("GEOJSON_DONE", function(event, json) {
-      gProvPath.selectAll("path")
-      .data(json.features)
-      .enter()
-      .append("path")
-      .attr("d", path)
-      .attr("stroke", borderColor)
-      .attr("stroke-width", 1)
-      .style("cursor", "pointer")
-      .attr("data-type", function(data) {
-        return data.properties.type;
-      })
-      .attr("data-id", function(data) {
-        return data.id;
-      })
-      .attr("data-name", function(data) {
-        return data.properties.name;
-      })
-      .attr("fill", function(data) {
-        return provinceColor;
-      })
-      .on("mouseover", function(data) {
-        var path = d3.select(this);
-        var tagName = d3.event.fromElement ? d3.event.fromElement.tagName : '';
-        if(options.cityId != data.id || tagName == 'rect'){
-          options.prePath && resetColor(options.prePath);
-
-          tipHover(data, path);
-
-          options.prePath = path;
-          options.cityId = data.id;
-        }
-      })
-      .on("mouseout", function(data) {
-        var path = d3.select(this);
-        var className = d3.event.toElement ? d3.event.toElement.className:'';
-        var tagName = d3.event.toElement ? d3.event.toElement.tagName:'';
-        var toPro = d3.event.toElement ? d3.event.toElement.innerHTML:'';
-
-        var curPro = data.properties.province;
-        if(toPro != curPro && !(className != 'map-tip' || className != 'city-name' || tagName == 'rect') ){
-          resetColor(options.prePath);
-          tipHide();
-        }
-      });
+      gPath.selectAll("path")
+          .data(json.features)
+          .enter()
+          .append("path")
+          .attr("d", path)
+          .attr("stroke", borderColor)
+          .attr("stroke-width", 1)
+          .style("cursor", "pointer")
+          .attr("data-id", function(data) {
+            return data.id;
+          })
+          .attr("fill", function(data) {
+            return provinceColor;
+          })
+          .on("mouseover", function(data) {
+            var path = d3.select(this);
+            hoverChange(path, data);
+          });
 
       southsea.selectAll(".southsea")
-      .data(json.southsea.geometry)
-      .enter()
-      .append("path")
-      .attr("class", function(d){
-        return d.type
-      })
-      .attr("d", function(d){
-        return d.path;
-      });
+              .data(json.southsea.geometry)
+              .enter()
+              .append("path")
+              .attr("stroke-width", 3)
+              .attr("fill", borderColor)
+              .attr("class", function(d){
+                return d.type
+              })
+              .attr("d", function(d){
+                return d.path;
+              });
 
       var labelData;
       if(showCity){
@@ -161,36 +126,20 @@
         labelData = json.features;
       }
 
-      gNameText.selectAll(".place-label")
-      .data(labelData)
-      .enter().append("text")
-      .attr("class", "place-label")
-      .attr("transform", function(d) { 
-        return "translate(" + projection(d.properties.cp) + ")"; 
-      })
-      .attr("text-anchor", "middle")
-      .attr("font-size", "12px")
-      .attr("cursor", "pointer")
-      .text(function(d) {
-        return d.properties.name;
-      })
-      .on("mouseover", function(data) {
-        var path = d3.selectAll('path[data-id="' + data.id + '"]');
-        var tagName = d3.event.toElement ? d3.event.toElement.tagName:'';
-        if(options.cityId != data.id || tagName == 'rect'){
-          options.prePath && resetColor(options.prePath);
-          tipHover(data, path);
-          options.prePath = path;
-          options.cityId = data.id;
-        }
-      })
-      .on("mouseout", function(data){
-        var tagName = d3.event.toElement ? d3.event.toElement.tagName:'';
-        if(tagName == 'rect'){
-          options.prePath && resetColor(options.prePath);
-          tipHide();
-        }
-      })
+      gText.selectAll(".place-label")
+          .data(labelData)
+          .enter().append("text")
+          .attr("class", "place-label")
+          .attr("transform", function(d) { 
+            return "translate(" + projection(d.properties.cp) + ")"; 
+          })
+          .text(function(d) {
+            return d.properties.name;
+          })
+          .on("mouseover", function(data) {
+            var path = d3.selectAll('path[data-id="' + data.id + '"]');
+            hoverChange(path, data);
+          })
 
       if(showCity){
         svg.selectAll(".api-tip")
@@ -198,15 +147,15 @@
         .enter()
         .append("path")
         .attr("class", function(d){
-          var _provience = d.properties.province;
-          var _level_number = window.nation_aqi_map[_provience]['quality_level']['level_number'];
-          return "api-tip-"+ _level_number
+          var provience = d.properties.province;
+          var levelNumber = window.nation_aqi_map ? window.nation_aqi_map[provience]['quality_level']['level_number'] : 0;
+          return "api-tip-"+ levelNumber
         })
         .attr("data-mdtxt", "air-map-item")
         .attr("transform", function(d) { 
-          var _x = projection(d.properties.cp)[0]-16;
-          var _y = projection(d.properties.cp)[1]-50;
-          return "translate(" + [_x, _y] + ") scale(0.8)"; 
+          var x = projection(d.properties.cp)[0]-16;
+          var y = projection(d.properties.cp)[1]-50;
+          return "translate(" + [x, y] + ") scale(0.8)"; 
         })
         .attr("text-anchor", "middle")
         .attr("cursor", "pointer")
@@ -214,10 +163,10 @@
           return "M 8,38 A 20,20 0 1 1 32,38 L 20 48 Z";
         })
         .on("click", function(d){
-          var _provience = d.properties.province;
-          if(_provience && window.nation_aqi_map){
-          var _city_code = window.nation_aqi_map[_provience]['city_code'];
-          window.open('/air/'+_city_code);
+          var provience = d.properties.province;
+          if(provience && window.nation_aqi_map){
+            var cityCode = window.nation_aqi_map[provience]['city_code'];
+            window.open('/air/'+cityCode);
           }
         });
 
@@ -227,27 +176,34 @@
         .append("text")
         .attr("class", "api-val")
         .attr("transform", function(d) {
-          var _x = projection(d.properties.cp)[0];
-          var _y = projection(d.properties.cp)[1]-28;
-          return "translate(" + [_x, _y] + ")"; 
+          var x = projection(d.properties.cp)[0];
+          var y = projection(d.properties.cp)[1]-28;
+          return "translate(" + [x, y] + ")"; 
         })
         .attr("text-anchor", "middle")
         .attr("pointer-events", "none")
         .attr("fill", "#fff")
         .text(function(d){
-          var _provience = d.properties.province;
-          var _aqi = window.nation_aqi_map[_provience]['aqi'];
-          return _aqi;
+          var provience = d.properties.province;
+          var aqi = window.nation_aqi_map ? window.nation_aqi_map[provience]['aqi'] : '空';
+          return aqi;
         })
       }
     });
-    
+    function hoverChange(path, data){
+     if(options.cityId != data.id){
+        resetColor(options.prePath);
+        tipHover(data, path);
+        options.prePath = path;
+        options.cityId = data.id;
+      }
+    }
     function tipHover(data, path){
       if(tipTimer){
-      clearTimeout(tipTimer);
+        clearTimeout(tipTimer);
       }
       tipTimer = setTimeout(function(){
-      showTips(data, path);
+        showTips(data, path);
       }, 100);
     }
 
@@ -286,6 +242,14 @@
     function tipHide(){
       $(".map-tip", selectorEle).hide();
     }
+
+    /* 移动到svg外面 */
+    $(document).bind("mouseover", function(e){
+      if(selectorEle.has(e.target).length === 0){
+        resetColor(options.prePath);
+        tipHide();
+      }
+    });
 
     if ($.isPlainObject(options.geoJSON)) {
       $(selector).trigger("GEOJSON_DONE", options.geoJSON);
